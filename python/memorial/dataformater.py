@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 import os
 import codecs
 
+import sqlite3
+
 #parse "name" into fio
 #parse "cont" field
 #version 1.0
@@ -21,7 +23,7 @@ class DataFormater:
 
     def updateFilename(self):
         self.out_filename = self.filename[0:len(self.filename)-len(".json")]
-        self.out_filename = "{0}_[{1}].json".format(self.out_filename, self.version)
+        self.out_filename = "[{0}]_{1}.json".format(self.version, self.out_filename)
         if self.dir:
             self.out_filename = "{0}/{1}".format(self.dir, self.out_filename)
             self.in_filename = "{0}/{1}".format(self.dir, self.filename)
@@ -58,7 +60,10 @@ class DataFormater:
                 self.extractFIO(item["name"], parsedItem)
                 self.parseContent(item["cont"], parsedItem)
 
-                self.data.append(parsedItem)
+                self.addExtracted(parsedItem)
+
+    def addExtracted(self, parsedItem):
+        self.data.append(parsedItem)
 
     def extractSourceInformation(self, source, parsed):
         markers = ["Источник:"]
@@ -99,7 +104,9 @@ class DataFormater:
                     "extractLocationInformation",
                     "extractPatronimicVariantsInformation",
                     "extractFirstnameVariantsInformation",
-                    "extractFspVariantsInformation"];
+                    "extractSecondnameVariantsInformation",
+                    "extractFspVariantsInformation",
+                    "extractPlaceBurialInformation"];
         index = 0
         for contentItem in contentList:
             processed = False
@@ -114,7 +121,7 @@ class DataFormater:
 
     def extractUnparsedInformation(self, contentItem, parsed, index):
         if index == 2:
-            parsed["job"] = contentItem
+            parsed["job"] = contentItem.strip(' -.,():')
         else:
             parsed["unparsed_{0}".format(index)] = contentItem
 
@@ -123,8 +130,27 @@ class DataFormater:
         for marker in markers:
             pos = contentItem.find(marker)
             if pos >= 0:
-                fsp= contentItem[pos+len(marker):].strip(' ():')
+                fsp= contentItem[pos+len(marker):].strip(' -.,():')
                 parsed["fsp"]["fsp_variants"] = fsp
+                return True
+        return False
+
+    def extractSecondnameVariantsInformation(self, contentItem, parsed, index):
+        markers = ["варианты фамилии"]
+        for marker in markers:
+            pos = contentItem.find(marker)
+            if pos >= 0:
+                fsp= contentItem[pos+len(marker):].strip(' -.,():')
+                parsed["fsp"]["secondtname_variants"] = fsp
+                return True
+        return False
+
+    def extractPlaceBurialInformation(self, contentItem, parsed, index):
+        markers = ["Место захоронения"]
+        for marker in markers:
+            pos = contentItem.find(marker)
+            if pos >= 0:
+                parsed["placeburial"] = contentItem[pos+len(marker):].strip(' -.,():')
                 return True
         return False
 
@@ -133,7 +159,7 @@ class DataFormater:
         for marker in markers:
             pos = contentItem.find(marker)
             if pos >= 0:
-                firstname= contentItem[pos+len(marker):].strip(' ():')
+                firstname= contentItem[pos+len(marker):].strip(' -.,():')
                 parsed["fsp"]["firstname_variants"] = firstname
                 return True
         return False
@@ -143,7 +169,7 @@ class DataFormater:
         for marker in markers:
             pos = contentItem.find(marker)
             if pos >= 0:
-                patronymic = contentItem[pos+len(marker):].strip(' ():')
+                patronymic = contentItem[pos+len(marker):].strip(' -.,():')
                 parsed["fsp"]["patronymic_variants"] = patronymic
                 return True
         return False
@@ -153,12 +179,12 @@ class DataFormater:
         for marker in markers:
             pos = contentItem.find(marker)
             if pos>=0:
-                parsed["shot"] = contentItem[pos+len(marker):].strip()
+                parsed["shot"] = contentItem[pos+len(marker):].strip(' -.,():')
                 return True
         return False
 
     def extractArrestedInformation(self, contentItem, parsed, index):
-        markers = ["Арестован", "Арестована"]
+        markers = ["Арестован", "Арестована", "Арест."]
         for marker in markers:
             pos = contentItem.find(marker)
             if pos>=0:
@@ -167,20 +193,20 @@ class DataFormater:
         return False
 
     def extractRehabilitatedInformation(self, contentItem, parsed, index):
-        markers = ["Реабилитирована", "Реабилитирован"]
+        markers = ["Реабилитирована", "Реабилитирован", "Реабил."]
         for marker in markers:
             pos = contentItem.find(marker)
             if pos>=0:
-                parsed["rehabilitated"] = contentItem[pos+len(marker):].strip()
+                parsed["rehabilitated"] = contentItem[pos+len(marker):].strip(' -.,():')
                 return True
         return False
 
     def extractBornInformation(self, contentItem, parsed, index):
-        markers = ["Родилась", "Родился"]
+        markers = ["Родилась", "Родился", "Род."]
         for marker in markers:
             pos = contentItem.find(marker)
             if pos>=0:
-                parsed["born"] = contentItem[pos+len(marker):].strip()
+                parsed["born"] = contentItem[pos+len(marker):].strip(' -.,():')
                 return True
         return False
 
@@ -189,7 +215,7 @@ class DataFormater:
         for marker in markers:
             pos = contentItem.find(marker)
             if pos>=0:
-                parsed["verdictmaker"] = contentItem[pos+len(marker):].strip()
+                parsed["verdictmaker"] = contentItem[pos+len(marker):].strip(' -.,():')
                 return True
         return False
 
@@ -198,20 +224,32 @@ class DataFormater:
         for marker in markers:
             pos = contentItem.find(marker)
             if pos>=0:
-                parsed["verdict"] = contentItem[pos+len(marker):].strip()
+                parsed["verdict"] = contentItem[pos+len(marker):].strip(' -.,():')
                 return True
         return False
 
     def extractLocationInformation(self, contentItem, parsed, index):
-        markers = ["Проживала:", "Проживал:"]
+        markers = ["Проживала:", "Проживал:", "Прож."]
         for marker in markers:
             pos = contentItem.find(marker)
             if pos>=0:
-                parsed["location"] = contentItem[pos+len(marker):].strip()
+                parsed["location"] = contentItem[pos+len(marker):].strip(' -.,():')
                 return True
         return False
 
     def save(self):
-        fobj = codecs.open(self.out_filename, "w", "utf-8")
-        json.dump(self.data, fobj, ensure_ascii=False)
-        fobj.close()
+
+        conn = sqlite3.connect('test.db')
+        print("Opened database successfully")
+        conn.execute('''CREATE TABLE COMPANY
+               (ID INT PRIMARY KEY     NOT NULL,
+               NAME           TEXT    NOT NULL,
+               AGE            INT     NOT NULL,
+               ADDRESS        CHAR(50),
+               SALARY         REAL);''')
+        print("Table created successfully")
+        conn.close()
+
+        # fobj = codecs.open(self.out_filename, "w", "utf-8")
+        # json.dump(self.data, fobj, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ': '))
+        # fobj.close()
