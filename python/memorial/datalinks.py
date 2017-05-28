@@ -6,7 +6,7 @@ import codecs
 
 # get all urls to all htmls with target data
 # if url not parsed previously
-# parse their and save to file
+# parse them and save to file
 class DataLinks:
     def __init__(self):
         self.allUrls = []
@@ -16,7 +16,7 @@ class DataLinks:
     def loadLinks(self, startUrl):
         self.rootUrl = startUrl
         r = self.http.request('GET', self.rootUrl)
-        soup = BeautifulSoup(r.data)
+        soup = BeautifulSoup(r.data, "html.parser")
         abc = soup.find_all("p", "alefbet")
 
         for link in abc[0].find_all('a'):
@@ -25,7 +25,7 @@ class DataLinks:
 
     def subCategory(self, url):
         r = self.http.request('GET', url)
-        soup = BeautifulSoup(r.data)
+        soup = BeautifulSoup(r.data, "html.parser")
         dop = soup.find_all("p", "doppoisk")
 
         subLinks = []
@@ -38,7 +38,7 @@ class DataLinks:
 
     def contentLinks(self, url):
         r = self.http.request('GET', url)
-        soup = BeautifulSoup(r.data)
+        soup = BeautifulSoup(r.data, "html.parser")
         dop = soup.find_all("ul", "left-list")
 
         for link in dop[0].find_all('a'):

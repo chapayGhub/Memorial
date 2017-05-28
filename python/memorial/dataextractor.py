@@ -25,6 +25,9 @@ class DataExtractor:
 
     def setDir(self, dir):
         self.dir = dir
+        if not os.path.exists(self.dir):
+            os.makedirs(self.dir)
+
         self.updateFilename()
 
     def extract(self, url):
@@ -44,7 +47,7 @@ class DataExtractor:
 
     def parseData(self):
         r = self.http.request('GET', self.url)
-        soup = BeautifulSoup(r.data)
+        soup = BeautifulSoup(r.data, "html.parser")
         for item in soup.find_all("li"):
             parsedItem = {}
             parsedItem["name"] = item.find("p", "name").get_text()

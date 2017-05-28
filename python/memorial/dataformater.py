@@ -238,18 +238,17 @@ class DataFormater:
         return False
 
     def save(self):
-
-        conn = sqlite3.connect('test.db')
-        print("Opened database successfully")
-        conn.execute('''CREATE TABLE COMPANY
-               (ID INT PRIMARY KEY     NOT NULL,
-               NAME           TEXT    NOT NULL,
-               AGE            INT     NOT NULL,
-               ADDRESS        CHAR(50),
-               SALARY         REAL);''')
-        print("Table created successfully")
-        conn.close()
-
-        # fobj = codecs.open(self.out_filename, "w", "utf-8")
-        # json.dump(self.data, fobj, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ': '))
-        # fobj.close()
+        #
+        # conn = sqlite3.connect('test.db')
+        # print("Opened database successfully")
+        # conn.execute('''CREATE TABLE COMPANY
+        #        (ID INT PRIMARY KEY     NOT NULL,
+        #        NAME           TEXT    NOT NULL,
+        #        AGE            INT     NOT NULL,
+        #        ADDRESS        CHAR(50),
+        #        SALARY         REAL);''')
+        # print("Table created successfully")
+        # conn.close()
+        fobj = codecs.open(self.out_filename, "w", "utf-8")
+        json.dump(self.data, fobj, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ': '))
+        fobj.close()

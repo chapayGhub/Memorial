@@ -15,25 +15,25 @@ def jdefault(o):
     return o.__dict__
 
 
-targetDir = "./etalon"
-# targetDir = "./data"
+# targetDir = "./etalon"
+targetDir = "./data"
 
 if __name__ == '__main__':
 
     def main(args):
 
-        # links = DataLinks()
-        # if links.load()==False:
-        #     links.loadLinks("http://lists.memo.ru")
-        #     links.save()
-        #
-        # data = DataExtractor()
-        # data.setDir("./data")
-        # for url in links.allUrls:
-        #     if data.isExtracted(url):
-        #         continue
-        #     data.extract(url)
-        #     data.save()
+        links = DataLinks()
+        if links.load()==False:
+            links.loadLinks("http://lists.memo.ru")
+            links.save()
+
+        data = DataExtractor()
+        data.setDir("./data")
+        for url in links.allUrls:
+            if data.isExtracted(url):
+                continue
+            data.extract(url)
+            data.save()
 
         data = DataFormater()
         data.setDir(targetDir)
