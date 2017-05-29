@@ -20,6 +20,9 @@ targetDir = "./data"
 
 if __name__ == '__main__':
 
+    def filterFormatedFiles(filename):
+        return filename.startswith(DataFormater.FormatedFilePrefix())
+
     def main(args):
 
         links = DataLinks()
@@ -29,7 +32,13 @@ if __name__ == '__main__':
 
         data = DataExtractor()
         data.setDir("./data")
+
+        itemsCount = len(links.allUrls)
+        index = 0
+
         for url in links.allUrls:
+            print ("target url: ({0})({1}/{2}): {3}".format(index/itemsCount, index, itemsCount, url))
+            index += 1
             if data.isExtracted(url):
                 continue
             data.extract(url)
@@ -37,8 +46,14 @@ if __name__ == '__main__':
 
         data = DataFormater()
         data.setDir(targetDir)
-        dirContent = os.listdir(targetDir)
+        dirContent = list(filter(filterFormatedFiles, os.listdir(targetDir)))
+
+        index = 0
+        itemsCount = len(dirContent)
+
         for file in dirContent:
+            print ("data file: ({0})({1}/{2}): {3}".format(index/itemsCount, index, itemsCount, file))
+            index += 1
             if  os.path.isfile("{0}/{1}".format(targetDir, file))==False \
                 or file.endswith("].json")==True \
                 or file.endswith(".json")==False:

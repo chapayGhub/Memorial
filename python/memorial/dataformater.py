@@ -11,15 +11,24 @@ import sqlite3
 #parse "cont" field
 #version 1.0
 #   "name" split by space and assign secondname = name[0] firstname = name[1] patronymic = name[2]
+
 class DataFormater:
     def __init__(self):
-        self.version = 1.0
+        self.version = DataFormater.Version()
         self.data = []
         self.url = ""
         self.dir = None
         self.filename = ""
         self.in_filename = ""
         self.out_filename = ""
+
+    @staticmethod
+    def Version():
+        return 0.1
+
+    @staticmethod
+    def FormatedFilePrefix():
+        return "[{0}]".format(DataFormater.Version())
 
     def updateFilename(self):
         self.out_filename = self.filename[0:len(self.filename)-len(".json")]
@@ -30,6 +39,9 @@ class DataFormater:
 
     def setDir(self, dir):
         self.dir = dir
+        if not os.path.exists(self.dir):
+            os.makedirs(self.dir)
+
         self.updateFilename()
 
     def formate(self, filename):
